@@ -1,27 +1,85 @@
-let savedValue = "";
+// main.js
+const input = document.getElementById("userInputValue");
+const select1 = document.getElementById("userSelectValue1");
+const select2 = document.getElementById("userSelectValue2");
+const response = document.getElementById("userResponse");
+const swapBtn = document.getElementById("swapBtn");
 
-let input = document.getElementById("userInputValue");
-let select = document.getElementById("userSelectValue");
-let response = document.getElementById("userResponse");
+// Prevent selecting the same currency in both selects
+function disableDuplicate() {
+  const val1 = select1.value;
+  const val2 = select2.value;
 
-console.log("Input element:", input);
-console.log("Select element:", select);
-console.log("Response element:", response);
+  // Enable all options first
+  [...select1.options].forEach((opt) => (opt.disabled = false));
+  [...select2.options].forEach((opt) => (opt.disabled = false));
 
-function userInput(event) {
-  console.log("Event:", event);
-  savedValue = event.target.value;
-  console.log("Saved:", savedValue);
+  // Disable the opposite selected value
+  const option1 = [...select1.options].find((opt) => opt.value === val2);
+  if (option1) option1.disabled = true;
+
+  const option2 = [...select2.options].find((opt) => opt.value === val1);
+  if (option2) option2.disabled = true;
 }
 
-function selectCurrency(event) {
-  console.log("Event:", event);
-  let selectedCurrency = event.target.value;
-  console.log("Saved:", selectedCurrency);
-  const [rate, currency] = selectedCurrency.split(" ");
-  savedValue *= rate;
-  console.log("Calculated value:", savedValue, currency);
+// Perform conversion safely
+function calculate() {
+  const amount = parseFloat(input.value);
+  if (isNaN(amount)) {
+    response.textContent = "Indtast et gyldigt beløb";
+    return;
+  }
+
+  const [rate1Str, cur1] = select1.value.split(" ");
+  const [rate2Str, cur2] = select2.value.split(" ");
+
+  const rate1 = parseFloat(rate1Str);
+  const rate2 = parseFloat(rate2Str);
+
+  if (isNaN(rate1) || isNaN(rate2) || rate2 === 0) {
+    response.textContent = "Kan ikke beregne valuta";
+    return;
+  }
+
+  const inDKK = amount * rate1;
+  const converted = inDKK / rate2;
+
+  response.textContent = `${amount} ${cur1} = ${converted.toFixed(2)} ${cur2}`;
 }
 
-input.addEventListener("change", userInput);
-select.addEventListener("change", selectCurrency);
+// Swap currencies safely
+function swapCurrencies() {
+  // Store currently selected values
+  const val1 = select1.value;
+  const val2 = select2.value;
+
+  // Enable all options temporarily so assignment works
+  [...select1.options].forEach((opt) => (opt.disabled = false));
+  [...select2.options].forEach((opt) => (opt.disabled = false));
+
+  // Swap values
+  select1.value = val2;
+  select2.value = val1;
+
+  // Now disable duplicate options
+  disableDuplicate();
+
+  // Recalculate
+  calculate();
+}
+
+// Event listeners
+input.addEventListener("input", calculate);
+select1.addEventListener("change", () => {
+  disableDuplicate();
+  calculate();
+});
+select2.addEventListener("change", () => {
+  disableDuplicate();
+  calculate();
+});
+swapBtn.addEventListener("click", swapCurrencies);
+
+// Init disables and calculation on page load
+disableDuplicate();
+calculate();
